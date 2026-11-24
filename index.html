@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f5f1e9">
+  <meta name="description" content="Turn travel photographs into an art-directed Instagram carousel with Puter AI.">
+  <title>Frame — AI Travel Carousel Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://js.puter.com/v2/"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#"><span class="brand-mark">f.</span><span>frame<span class="brand-muted"> / studio</span></span></a>
+    <div class="top-actions">
+      <span class="status-dot"></span><span class="top-note">AI CREATIVE STUDIO</span>
+      <button class="button button-quiet button-small" id="puterStatus">Connect Puter</button>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow"><span>01</span> YOUR TRIP, REIMAGINED</div>
+        <h1>Make memories<br><em>swipe beautifully.</em></h1>
+        <p class="hero-sub">A little art direction. A little nostalgia. Your photographs, turned into a story worth keeping.</p>
+        <div class="hero-tags"><span>✳ Editorial layouts</span><span>↗ Scrapbook details</span><span>▧ Ready-to-post exports</span></div>
+      </div>
+      <div class="hero-art" aria-label="Scrapbook collage preview">
+        <div class="hero-paper paper-back"></div>
+        <div class="hero-photo photo-one"><div class="photo-label">A SUMMER SOMEWHERE</div></div>
+        <div class="hero-photo photo-two"></div>
+        <div class="hero-sticker">✳</div>
+        <div class="hero-note">little moments<br>big memories <span>♡</span></div>
+        <div class="hero-tape"></div>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <div class="section-heading"><div><div class="eyebrow"><span>02</span> THE CREATIVE BRIEF</div><h2>Set the scene.</h2></div><span class="step-count">STEP 1 OF 3</span></div>
+      <div class="brief-grid">
+        <label class="field field-wide"><span>DESTINATION <i>Where did you go?</i></span><input id="destination" placeholder="e.g. Goa, India" maxlength="100"></label>
+        <label class="field"><span>TRAVEL VIBE</span><select id="vibe"><option value="Nostalgic summer scrapbook">Nostalgic summer scrapbook</option><option>European summer editorial</option><option>Cinematic travel diary</option><option>Vintage film & analogue</option><option>Playful, colourful & candid</option><option>Minimal luxury</option><option>Moody adventure journal</option><option>Dreamy coastal diary</option><option>Indian folk-inspired travel journal</option></select></label>
+        <label class="field"><span>TRAVEL WITH</span><select id="company"><option>Friends</option><option>Solo</option><option>Couple</option><option>Family</option><option>Group trip</option></select></label>
+        <label class="field"><span>MOOD</span><select id="mood"><option>Carefree and nostalgic</option><option>Dreamy and peaceful</option><option>Energetic and playful</option><option>Romantic and warm</option><option>Adventurous and cinematic</option><option>Sophisticated and minimal</option></select></label>
+        <label class="field"><span>SLIDE COUNT</span><select id="slideCount"><option value="auto">Let AI decide</option><option value="5">5 slides</option><option value="7">7 slides</option><option value="8">8 slides</option><option value="10">10 slides</option><option value="12">12 slides</option></select></label>
+        <label class="field"><span>TEXT ON SLIDES</span><select id="textStyle"><option value="Short handwritten notes and small location labels">Handwritten notes</option><option value="Minimal location labels only">Minimal labels</option><option value="Editorial titles and short captions">Editorial captions</option><option value="No text on slides">No text</option></select></label>
+        <label class="field"><span>DESIGN DIRECTION</span><select id="designStyle"><option value="Reference-driven scrapbook with torn paper, layered photos, Polaroid frames, stickers and handwritten notes">Reference scrapbook (recommended)</option><option value="Clean editorial magazine layouts, refined typography and negative space">Editorial magazine</option><option value="Vintage analogue film diary with warm paper and subtle grain">Vintage film diary</option><option value="Bright Indian folk-art inspired patterns and playful motifs">Indian folk art</option></select></label>
+        <label class="field field-wide"><span>ANYTHING ELSE? <i>Optional creative notes</i></span><textarea id="notes" rows="2" placeholder="A birthday weekend, favourite moments, places to highlight, words to avoid…"></textarea></label>
+      </div>
+    </section>
+
+    <section class="workspace upload-section">
+      <div class="section-heading"><div><div class="eyebrow"><span>03</span> THE PHOTO DUMP</div><h2>Bring your memories.</h2><p class="section-sub">Upload 3–30 photographs. We'll inspect them before arranging the story.</p></div><span class="step-count" id="imageCount">0 PHOTOS</span></div>
+      <input id="fileInput" type="file" accept="image/*" multiple hidden>
+      <div class="dropzone" id="dropzone" role="button" tabindex="0">
+        <div class="upload-icon">↥</div><strong>Drop your photographs here</strong><span>or <button class="text-button" id="browseButton" type="button">browse files</button></span><small>JPG · PNG · WEBP · HEIC where browser-supported · up to 30 images</small>
+      </div>
+      <div class="photo-grid" id="photoGrid"></div>
+      <div class="upload-foot"><span>Original photographs stay in this browser session.</span><button class="text-button danger" id="clearPhotos" type="button" hidden>Remove all</button></div>
+    </section>
+
+    <section class="generate-panel">
+      <div><div class="eyebrow">READY WHEN YOU ARE</div><h2>Let the art direction begin.</h2><p>AI analyses your photographs, plans the carousel, then renders every slide locally in your browser.</p></div>
+      <button class="button button-dark button-large" id="generateButton" disabled><span>✳</span> Create my carousel <span>↗</span></button>
+    </section>
+
+    <section class="progress-section" id="progressSection" hidden>
+      <div class="progress-head"><div><div class="eyebrow">THE STUDIO IS WORKING</div><h2 id="progressTitle">Reading the room…</h2></div><span id="progressPercent">0%</span></div>
+      <div class="progress-track"><div id="progressBar"></div></div>
+      <div class="progress-steps" id="progressSteps"><span class="active">01 Analyse photographs</span><span>02 Art-direct the story</span><span>03 Render the slides</span></div>
+      <p id="progressMessage">Preparing your photographs…</p>
+    </section>
+
+    <section class="results-section" id="resultsSection" hidden>
+      <div class="section-heading"><div><div class="eyebrow"><span>04</span> THE CONTACT SHEET</div><h2>Your story, in frames.</h2><p class="section-sub" id="resultSummary"></p></div><button class="button button-dark" id="downloadButton">↓ Download ZIP</button></div>
+      <div class="result-toolbar"><span id="resultCount">0 SLIDES</span><span>1080 × 1350 PX · PNG</span></div>
+      <div class="slide-grid" id="slideGrid"></div>
+      <div class="result-bottom"><p>Not quite right? Change your brief or regenerate the carousel. You can also download individual slides.</p><button class="button button-outline" id="startOverButton">Start a new story ↗</button></div>
+    </section>
+    <footer><span>FRAME / TRAVEL STUDIO</span><span>MADE FOR THE MEMORIES THAT MATTER.</span></footer>
+  </main>
+  <div class="toast" id="toast" role="status"></div>
+</body>
+</html>
