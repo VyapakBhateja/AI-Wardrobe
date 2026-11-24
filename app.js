@@ -145,13 +145,13 @@ ${JSON.stringify(analyses)}
     if(!text)return;
     const {maxLines=3,lineHeight=48,minFontSize=20}=options;
     ctx.save();ctx.fillStyle=color;ctx.textAlign=align;ctx.textBaseline="middle";
-    const parsed=font.match(/(\\d+(?:\\.\\d+)?)px/);let fontSize=parsed?Number(parsed[1]):40;
-    const family=font.replace(/(?:italic\\s+)?\\d+(?:\\.\\d+)?px\\s*/,"");
+    const parsed=font.match(/(\d+(?:\\.\d+)?)px/);let fontSize=parsed?Number(parsed[1]):40;
+    const family=font.replace(/(?:italic\s+)?\d+(?:\\.\d+)?px\s*/,"");
     const italic=/^italic/.test(font);
     const makeLines=(size)=>{
       ctx.font=(italic?"italic ":"")+size+"px "+family;
       const lines=[];let line="";
-      for(const word of String(text).trim().split(/\\s+/)){
+      for(const word of String(text).trim().split(/\s+/)){
         if(ctx.measureText(word).width>maxWidth){
           if(line){lines.push(line);line="";}
           let part="";
