@@ -26,12 +26,6 @@ jobs:
         with:
           enablement: true
 
-      - name: Render social preview PNG
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y librsvg2-bin
-          rsvg-convert -w 1200 -h 630 og-preview.svg -o og-preview.png
-
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
