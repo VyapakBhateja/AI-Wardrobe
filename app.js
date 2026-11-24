@@ -78,7 +78,7 @@ You are creating a carousel plan for an actual browser-based renderer. Return JS
 {"title":"short title","creative_direction":"one sentence","palette":["#hex",...],"slides":[{"title":"short slide title","purpose":"story purpose","layout":"hero|polaroid|split|collage|note|closing","images":["IMG_001"],"caption":"short optional text","location_label":"optional factual label","background":"#hex","sticker":"none|star|shell|flower|camera|sparkle|ticket|tape","rotation":-5,"image_focus":"center|top|bottom","design_note":"short direction"}]}
 Rules:
 - Create ${count}. Use only supplied image IDs and use each selected photo no more than twice.
-- The first slide must be the strongest hook; the final slide should feel like a closing memory.
+- The first slide is a dedicated cover: choose the strongest single photograph, use a memorable short title/caption (ideally 2–6 words), and a factual destination label when known. The final slide should feel like a closing memory.
 - Use varied layouts and a narrative flow; avoid repeating layout more than twice consecutively.
 - Only use a location label if supported by image analysis or the user destination. Do not make up specific venues.
 - Captions must be short. Respect text preference.
@@ -141,10 +141,47 @@ ${JSON.stringify(analyses)}
     const chars={star:"✳",shell:"🐚",flower:"✿",camera:"📷",sparkle:"✦",ticket:"✉",tape:"▰"};
     ctx.shadowColor="#30271d33";ctx.shadowBlur=8;ctx.fillStyle=type==="tape"?"#e7bd83":"#fffaf0";ctx.fillText(chars[type]||"✦",0,0);ctx.restore();
   }
-  function drawText(ctx,text,x,y,maxWidth,font,color,align="left"){
-    if(!text)return;ctx.save();ctx.fillStyle=color;ctx.font=font;ctx.textAlign=align;ctx.textBaseline="middle";
-    const words=text.split(" ");let line="",lines=[];for(const word of words){const test=line?line+" "+word:word;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=word;}else line=test;}if(line)lines.push(line);
-    lines.slice(0,3).forEach((l,i)=>ctx.fillText(l,x,y+i*48,maxWidth));ctx.restore();
+  function drawText(ctx,text,x,y,maxWidth,font,color,align="left",options={}){
+    if(!text)return;
+    const {maxLines=3,lineHeight=48,minFontSize=20}=options;
+    ctx.save();ctx.fillStyle=color;ctx.textAlign=align;ctx.textBaseline="middle";
+    const parsed=font.match(/(\\d+(?:\\.\\d+)?)px/);let fontSize=parsed?Number(parsed[1]):40;
+    const family=font.replace(/(?:italic\\s+)?\\d+(?:\\.\\d+)?px\\s*/,"");
+    const italic=/^italic/.test(font);
+    const makeLines=(size)=>{
+      ctx.font=(italic?"italic ":"")+size+"px "+family;
+      const lines=[];let line="";
+      for(const word of String(text).trim().split(/\\s+/)){
+        if(ctx.measureText(word).width>maxWidth){
+          if(line){lines.push(line);line="";}
+          let part="";
+          for(const char of word){if(ctx.measureText(part+char).width>maxWidth&&part){lines.push(part);part=char;}else part+=char;}
+          line=part;continue;
+        }
+        const test=line?line+" "+word:word;
+        if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=word;}else line=test;
+      }
+      if(line)lines.push(line);
+      return lines;
+    };
+    let lines=makeLines(fontSize);
+    while(lines.length>maxLines&&fontSize>minFontSize){fontSize-=2;lines=makeLines(fontSize);}
+    if(lines.length>maxLines){lines=lines.slice(0,maxLines);let last=lines[maxLines-1];while(last.length&&ctx.measureText(last+"…").width>maxWidth)last=last.slice(0,-1);lines[maxLines-1]=last.trimEnd()+"…";}
+    ctx.font=(italic?"italic ":"")+fontSize+"px "+family;
+    lines.forEach((line,i)=>ctx.fillText(line,x,y+i*lineHeight));
+    ctx.restore();
+  }
+  function renderCoverSlide(ctx,slide,first){
+    drawCover(ctx,first,0,0,W,H,slide.image_focus);
+    const shade=ctx.createLinearGradient(0,0,0,H);
+    shade.addColorStop(0,"#00000055");shade.addColorStop(.42,"#00000000");shade.addColorStop(.68,"#00000010");shade.addColorStop(1,"#00000055");
+    ctx.fillStyle=shade;ctx.fillRect(0,0,W,H);
+    if(slide.location_label)drawText(ctx,slide.location_label.toUpperCase(),76,92,760,"22px 'DM Mono', monospace","#fff", "left",{maxLines:1,lineHeight:30});
+    drawTornPanel(ctx,54,H-370,972,292,"#f2dfc2");
+    const title=slide.caption||slide.title||"A journey to remember";
+    drawText(ctx,title,104,H-270,820,"italic 68px 'Playfair Display', Georgia","#44372b","left",{maxLines:2,lineHeight:78,minFontSize:38});
+    ctx.save();ctx.strokeStyle="#b88b62";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(104,H-104);ctx.lineTo(320,H-104);ctx.stroke();ctx.restore();
+    drawSticker(ctx,slide.sticker==="none"?"flower":slide.sticker,W-145,180);
   }
   async function renderSlide(slide,index,plan){
     const canvas=document.createElement("canvas");canvas.width=W;canvas.height=H;const ctx=canvas.getContext("2d");
@@ -153,7 +190,7 @@ ${JSON.stringify(analyses)}
     const imgs=await Promise.all(selected.map(f=>loadImage(f.url)));
     const first=imgs[0];
     const layout=slide.layout;
-    if(layout==="hero"){
+    if(index===0){\n      renderCoverSlide(ctx,slide,first);\n    }else if(layout==="hero"){
       drawCover(ctx,first,0,0,W,H,slide.image_focus);
       const grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,"#00000030");grad.addColorStop(.55,"#00000000");grad.addColorStop(1,"#00000060");ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
       if(slide.location_label)drawText(ctx,slide.location_label.toUpperCase(),72,100,850,"22px 'DM Mono', monospace","#fff");
@@ -185,7 +222,7 @@ ${JSON.stringify(analyses)}
       if(slide.caption)drawText(ctx,slide.caption,75,150,900,"italic 54px 'Playfair Display', Georgia","#3d352e");
       else drawText(ctx,slide.title,75,150,900,"italic 54px 'Playfair Display', Georgia","#3d352e");
     }
-    if(slide.sticker!=="none")drawSticker(ctx,slide.sticker,W-145,layout==="hero"?H*.18:180);
+    if(index!==0&&slide.sticker!=="none")drawSticker(ctx,slide.sticker,W-145,layout==="hero"?H*.18:180);
     if(layout!=="hero"&&slide.location_label&&layout!=="note")drawText(ctx,slide.location_label.toUpperCase(),65,H-65,850,"16px 'DM Mono', monospace",layout==="split"?"#fff":"#51483d");
     if(layout!=="hero")paperNoise(ctx);
     return canvas;
