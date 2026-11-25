@@ -180,7 +180,7 @@ ${JSON.stringify(analyses)}
     const wrap=()=>{
       ctx.font="italic "+size+"px "+family;
       const out=[];let line="";
-      for(const word of String(text).trim().split(/\\s+/)){
+      for(const word of String(text).trim().split(/\s+/)){
         const candidate=line?line+" "+word:word;
         if(ctx.measureText(candidate).width<=innerWidth){line=candidate;continue;}
         if(line)out.push(line);
