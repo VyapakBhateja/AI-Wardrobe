@@ -315,12 +315,16 @@ ${JSON.stringify(analyses)}
     }else if(layout==="polaroid"){
       drawCover(ctx,first,0,0,W,H,slide.image_focus);
       if(imgs[1]&&!hasProminentPerson(selected[0])){
-        ctx.save();ctx.translate(W*.79,H*.23);ctx.rotate(.055);ctx.shadowColor="#0005";ctx.shadowBlur=24;ctx.fillStyle="#fffdf7";ctx.fillRect(-145,-170,290,360);ctx.shadowBlur=0;drawCover(ctx,imgs[1],-128,-153,256,285);ctx.restore();
+        const p=slide.composition?.secondary_photo||{x:.66,y:.12,w:.28,rotation:5};
+        const pw=Math.round(Math.max(220,Math.min(390,p.w*W)));
+        const ph=Math.round(pw*1.22);
+        const px=Math.round((p.x+p.w/2)*W),py=Math.round((p.y+p.w/2)*H);
+        ctx.save();ctx.translate(px,py);ctx.rotate((p.rotation||5)*Math.PI/180);ctx.shadowColor="#0005";ctx.shadowBlur=24;ctx.fillStyle="#fffdf7";ctx.fillRect(-pw/2-16,-ph/2-16,pw+32,ph+48);ctx.shadowBlur=0;drawCover(ctx,imgs[1],-pw/2,-ph/2,pw,ph);ctx.restore();
       }
       if(slide.caption)drawPlannedCaption(ctx,slide,slide.caption,{x:42,y:H-245,width:620,fontSize:42,minFontSize:30,maxLines:3,background:"#f4dfc4"});
     }else if(layout==="collage"){
       drawCover(ctx,first,0,0,W,H,slide.image_focus);
-      if(imgs[1]){ctx.save();ctx.translate(W*.68,H*.32);ctx.rotate(-.09);ctx.shadowColor="#0006";ctx.shadowBlur=25;ctx.fillStyle="#fff";ctx.fillRect(-185,-210,370,430);ctx.shadowBlur=0;drawCover(ctx,imgs[1],-168,-192,336,350);ctx.restore();}
+      if(imgs[1]){const p=slide.composition?.secondary_photo||{x:.53,y:.17,w:.31,rotation:-5};const pw=Math.round(Math.max(220,Math.min(390,p.w*W))),ph=Math.round(pw*1.16);const px=Math.round((p.x+p.w/2)*W),py=Math.round((p.y+p.w/2)*H);ctx.save();ctx.translate(px,py);ctx.rotate((p.rotation||-5)*Math.PI/180);ctx.shadowColor="#0006";ctx.shadowBlur=25;ctx.fillStyle="#fff";ctx.fillRect(-pw/2-16,-ph/2-16,pw+32,ph+48);ctx.shadowBlur=0;drawCover(ctx,imgs[1],-pw/2,-ph/2,pw,ph);ctx.restore();}
       if(imgs[2]){ctx.save();ctx.translate(W*.25,H*.78);ctx.rotate(.07);ctx.shadowColor="#0006";ctx.shadowBlur=20;ctx.fillStyle="#fff";ctx.fillRect(-150,-165,300,345);ctx.shadowBlur=0;drawCover(ctx,imgs[2],-135,-150,270,280);ctx.restore();}
       if(slide.caption)drawPlannedCaption(ctx,slide,slide.caption,{x:48,y:H-250,width:660,fontSize:44,minFontSize:30,maxLines:3,background:"#f4e6d2"});
     }else if(layout==="note"){
