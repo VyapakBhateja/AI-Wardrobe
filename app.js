@@ -231,12 +231,25 @@ ${JSON.stringify(analyses)}
   function renderCoverSlide(ctx,slide,first){
     drawCover(ctx,first,0,0,W,H,slide.image_focus);
     const shade=ctx.createLinearGradient(0,0,0,H);
-    shade.addColorStop(0,"#00000055");shade.addColorStop(.42,"#00000000");shade.addColorStop(.68,"#00000010");shade.addColorStop(1,"#00000055");
-    ctx.fillStyle=shade;ctx.fillRect(0,0,W,H);
-    if(slide.location_label)drawText(ctx,slide.location_label.toUpperCase(),76,92,760,"22px 'DM Mono', monospace","#fff", "left",{maxLines:1,lineHeight:30});
+    shade.addColorStop(0,"#00000055");
+    shade.addColorStop(.42,"#00000000");
+    shade.addColorStop(.68,"#00000010");
+    shade.addColorStop(1,"#00000055");
+    ctx.fillStyle=shade;
+    ctx.fillRect(0,0,W,H);
+    if(slide.location_label){
+      drawText(ctx,slide.location_label.toUpperCase(),76,92,760,"22px 'DM Mono', monospace","#fff");
+    }
     const title=slide.caption||slide.title||"A journey to remember";
     drawCaptionCard(ctx,title,{x:54,y:H-300,width:972,fontSize:66,minFontSize:42,maxLines:2,background:"#f2dfc2",lineHeight:78});
-    ctx.save();ctx.strokeStyle="#b88b62";ctx.lineWidth:3;ctx.beginPath();ctx.moveTo(88,H-58);ctx.lineTo(280,H-58);ctx.stroke();ctx.restore();
+    ctx.save();
+    ctx.strokeStyle="#b88b62";
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.moveTo(88,H-58);
+    ctx.lineTo(280,H-58);
+    ctx.stroke();
+    ctx.restore();
     drawSticker(ctx,slide.sticker==="none"?"flower":slide.sticker,W-145,180);
   }
   async function renderSlide(slide,index,plan){
