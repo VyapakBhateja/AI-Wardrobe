@@ -171,16 +171,60 @@ ${JSON.stringify(analyses)}
     lines.forEach((line,i)=>ctx.fillText(line,x,y+i*lineHeight));
     ctx.restore();
   }
+  function drawCaptionCard(ctx,text,config={}){
+    if(!text)return;
+    const {x=64,y=H-250,width=720,fontSize=46,minFontSize=30,maxLines=3,color="#44372b",background="#f4dfc4",align="left",lineHeight=null}=config;
+    const padX=34,padY=27,innerWidth=width-padX*2;
+    const family="'Playfair Display', Georgia";
+    let size=fontSize,lines=[];
+    const wrap=()=>{
+      ctx.font="italic "+size+"px "+family;
+      const out=[];let line="";
+      for(const word of String(text).trim().split(/\\s+/)){
+        const candidate=line?line+" "+word:word;
+        if(ctx.measureText(candidate).width<=innerWidth){line=candidate;continue;}
+        if(line)out.push(line);
+        if(ctx.measureText(word).width>innerWidth){
+          let part="";
+          for(const ch of word){if(ctx.measureText(part+ch).width>innerWidth&&part){out.push(part);part=ch;}else part+=ch;}
+          line=part;
+        }else line=word;
+      }
+      if(line)out.push(line);
+      return out;
+    };
+    lines=wrap();
+    while(lines.length>maxLines&&size>minFontSize){size-=2;lines=wrap();}
+    if(lines.length>maxLines){
+      lines=lines.slice(0,maxLines);
+      let last=lines[maxLines-1];
+      while(last.length&&ctx.measureText(last+"…").width>innerWidth)last=last.slice(0,-1);
+      lines[maxLines-1]=last.trimEnd()+"…";
+    }
+    const lh=lineHeight||Math.round(size*1.24);
+    const height=lines.length*lh+padY*2;
+    const safeY=Math.max(36,Math.min(y,H-height-36));
+    drawTornPanel(ctx,x,safeY,width,height,background);
+    ctx.save();ctx.fillStyle=color;ctx.font="italic "+size+"px "+family;ctx.textAlign=align;ctx.textBaseline="middle";
+    const tx=align==="center"?x+width/2:x+padX;
+    lines.forEach((line,i)=>ctx.fillText(line,tx,safeY+padY+lh*(i+.5),innerWidth));
+    ctx.restore();
+  }
+  function hasProminentPerson(item){
+    const a=item?.analysis||{};
+    const role=String(a.visual_role||"").toLowerCase();
+    const subject=String(a.subject||"").toLowerCase();
+    return ["portrait","group"].includes(role)||/person|people|woman|man|child|selfie|portrait|family|couple/.test(subject);
+  }
   function renderCoverSlide(ctx,slide,first){
     drawCover(ctx,first,0,0,W,H,slide.image_focus);
     const shade=ctx.createLinearGradient(0,0,0,H);
     shade.addColorStop(0,"#00000055");shade.addColorStop(.42,"#00000000");shade.addColorStop(.68,"#00000010");shade.addColorStop(1,"#00000055");
     ctx.fillStyle=shade;ctx.fillRect(0,0,W,H);
     if(slide.location_label)drawText(ctx,slide.location_label.toUpperCase(),76,92,760,"22px 'DM Mono', monospace","#fff", "left",{maxLines:1,lineHeight:30});
-    drawTornPanel(ctx,54,H-370,972,292,"#f2dfc2");
     const title=slide.caption||slide.title||"A journey to remember";
-    drawText(ctx,title,104,H-270,820,"italic 68px 'Playfair Display', Georgia","#44372b","left",{maxLines:2,lineHeight:78,minFontSize:38});
-    ctx.save();ctx.strokeStyle="#b88b62";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(104,H-104);ctx.lineTo(320,H-104);ctx.stroke();ctx.restore();
+    drawCaptionCard(ctx,title,{x:54,y:H-300,width:972,fontSize:66,minFontSize:42,maxLines:2,background:"#f2dfc2",lineHeight:78});
+    ctx.save();ctx.strokeStyle="#b88b62";ctx.lineWidth:3;ctx.beginPath();ctx.moveTo(88,H-58);ctx.lineTo(280,H-58);ctx.stroke();ctx.restore();
     drawSticker(ctx,slide.sticker==="none"?"flower":slide.sticker,W-145,180);
   }
   async function renderSlide(slide,index,plan){
@@ -196,36 +240,35 @@ ${JSON.stringify(analyses)}
       drawCover(ctx,first,0,0,W,H,slide.image_focus);
       const grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,"#00000030");grad.addColorStop(.55,"#00000000");grad.addColorStop(1,"#00000060");ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
       if(slide.location_label)drawText(ctx,slide.location_label.toUpperCase(),72,100,850,"22px 'DM Mono', monospace","#fff");
-      if(slide.caption){drawTornPanel(ctx,65,H-330,Math.min(620,ctx.measureText(slide.caption).width+200),230,"#f0d6ad");drawText(ctx,slide.caption,105,H-235,500,"italic 48px 'Playfair Display', Georgia","#44372b");}
+      if(slide.caption)drawCaptionCard(ctx,slide.caption,{x:62,y:H-280,width:Math.min(820,W-124),fontSize:48,minFontSize:32,maxLines:3,background:"#f0d6ad"});
     }else if(layout==="split"){
       drawCover(ctx,first,0,0,W*.56,H,slide.image_focus);
       if(imgs[1])drawCover(ctx,imgs[1],W*.58,0,W*.42,H);
       drawTornPanel(ctx,W*.54,0,45,H,"#f5eee3");
-      if(slide.caption)drawText(ctx,slide.caption,W*.62,H-210,W*.32,"italic 38px 'Playfair Display', Georgia","#fff");
+      if(slide.caption)drawCaptionCard(ctx,slide.caption,{x:W*.59,y:H-300,width:W*.36,fontSize:36,minFontSize:25,maxLines:4,background:"#f4e6d2"});
     }else if(layout==="polaroid"){
       drawCover(ctx,first,0,0,W,H,slide.image_focus);
-      if(imgs[1]){
-        ctx.save();ctx.translate(W*.65,H*.34);ctx.rotate(.07);ctx.shadowColor="#0005";ctx.shadowBlur=28;ctx.fillStyle="#fffdf7";ctx.fillRect(-215,-245,430,520);ctx.shadowBlur=0;drawCover(ctx,imgs[1],-190,-220,380,405);ctx.restore();
+      if(imgs[1]&&!hasProminentPerson(selected[0])){
+        ctx.save();ctx.translate(W*.79,H*.23);ctx.rotate(.055);ctx.shadowColor="#0005";ctx.shadowBlur=24;ctx.fillStyle="#fffdf7";ctx.fillRect(-145,-170,290,360);ctx.shadowBlur=0;drawCover(ctx,imgs[1],-128,-153,256,285);ctx.restore();
       }
-      if(slide.caption){drawTornPanel(ctx,45,H-250,580,180,"#f4dfc4");drawText(ctx,slide.caption,78,H-165,500,"italic 42px 'Playfair Display', Georgia","#45372e");}
+      if(slide.caption)drawCaptionCard(ctx,slide.caption,{x:42,y:H-245,width:620,fontSize:42,minFontSize:30,maxLines:3,background:"#f4dfc4"});
     }else if(layout==="collage"){
       drawCover(ctx,first,0,0,W,H,slide.image_focus);
       if(imgs[1]){ctx.save();ctx.translate(W*.68,H*.32);ctx.rotate(-.09);ctx.shadowColor="#0006";ctx.shadowBlur=25;ctx.fillStyle="#fff";ctx.fillRect(-185,-210,370,430);ctx.shadowBlur=0;drawCover(ctx,imgs[1],-168,-192,336,350);ctx.restore();}
       if(imgs[2]){ctx.save();ctx.translate(W*.25,H*.78);ctx.rotate(.07);ctx.shadowColor="#0006";ctx.shadowBlur=20;ctx.fillStyle="#fff";ctx.fillRect(-150,-165,300,345);ctx.shadowBlur=0;drawCover(ctx,imgs[2],-135,-150,270,280);ctx.restore();}
-      if(slide.caption)drawText(ctx,slide.caption,55,100,570,"italic 48px 'Playfair Display', Georgia","#fff");
+      if(slide.caption)drawCaptionCard(ctx,slide.caption,{x:48,y:H-250,width:660,fontSize:44,minFontSize:30,maxLines:3,background:"#f4e6d2"});
     }else if(layout==="note"){
       ctx.fillStyle=slide.background;ctx.fillRect(0,0,W,H);drawCover(ctx,first,45,45,W-90,H*.68,slide.image_focus);
       drawTornPanel(ctx,0,H*.70,W,H*.30,"#f4e6d2");
-      if(slide.location_label)drawText(ctx,slide.location_label.toUpperCase(),75,H*.77,900,"18px 'DM Mono', monospace","#806b58");
-      drawText(ctx,slide.caption||slide.title,75,H*.85,920,"italic 52px 'Playfair Display', Georgia","#3d352e");
+      if(slide.location_label)drawText(ctx,slide.location_label.toUpperCase(),75,H*.76,900,"18px 'DM Mono', monospace","#806b58","left",{maxLines:1,lineHeight:24});
+      drawCaptionCard(ctx,slide.caption||slide.title,{x:42,y:H*.79,width:W-84,fontSize:48,minFontSize:32,maxLines:2,background:"#f4e6d2"});
     }else{
       drawCover(ctx,first,0,H*.28,W,H*.72,slide.image_focus);
-      drawTornPanel(ctx,0,0,W,H*.38,slide.background);
-      if(slide.caption)drawText(ctx,slide.caption,75,150,900,"italic 54px 'Playfair Display', Georgia","#3d352e");
-      else drawText(ctx,slide.title,75,150,900,"italic 54px 'Playfair Display', Georgia","#3d352e");
+      drawTornPanel(ctx,0,0,W,H*.38,"#f4e6d2");
+      drawCaptionCard(ctx,slide.caption||slide.title,{x:52,y:62,width:W-104,fontSize:54,minFontSize:36,maxLines:2,background:"#f4e6d2"});
     }
     if(index!==0&&slide.sticker!=="none")drawSticker(ctx,slide.sticker,W-145,layout==="hero"?H*.18:180);
-    if(layout!=="hero"&&slide.location_label&&layout!=="note")drawText(ctx,slide.location_label.toUpperCase(),65,H-65,850,"16px 'DM Mono', monospace",layout==="split"?"#fff":"#51483d");
+    if(layout!=="hero"&&layout!=="note"&&layout!=="closing"&&slide.location_label)drawText(ctx,slide.location_label.toUpperCase(),65,H-55,850,"16px 'DM Mono', monospace","#51483d","left",{maxLines:1,lineHeight:22});
     if(layout!=="hero")paperNoise(ctx);
     return canvas;
   }
