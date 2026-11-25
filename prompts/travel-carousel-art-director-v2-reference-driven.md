@@ -361,3 +361,62 @@ Deliver:
 Turn the user's photographs into a tactile, layered, nostalgic travel journal. Let the photographs carry the memories; let paper, handwriting, stickers and layout give those memories a visual personality.
 
 The objective is not to make every slide beautiful in isolation. The objective is to make the entire carousel feel like a story someone wants to swipe through, keep and revisit.
+
+---
+
+# 16. MANDATORY IMAGE-AWARE COMPOSITION STANDARD
+
+This section overrides any generic or fixed-position layout instruction above.
+
+The AI is the art director. The renderer is the execution engine. Never make the renderer guess where visual components belong.
+
+## 16.1 Inspect the actual image before layout
+For every source photograph, identify:
+- People, faces, bodies, animals, landmarks, signs, food and other meaningful objects.
+- The primary focal point and its approximate bounding box.
+- Protected regions that must not be covered or cropped.
+- Genuine negative-space regions suitable for text or decoration.
+- Subject position, image orientation and likely crop risks.
+- A safe crop that preserves the photograph's meaning.
+
+Represent coordinates as normalized values from 0 to 1, measured from the top-left corner. A bounding box is {x, y, w, h}. Never claim pixel-perfect segmentation from a rough visual estimate; when uncertain, mark the confidence low and choose a conservative composition.
+
+## 16.2 Placement is content-dependent
+For each slide, choose the position and size of:
+- Caption or title panel.
+- Location label.
+- Sticker or decorative object.
+- Secondary photograph / Polaroid inset.
+- Torn-paper divider or panel.
+
+Use actual negative space. Do not cover protected regions, faces, people, the focal point, signs or meaningful objects. Do not reuse the same coordinates simply because the previous slide looked good.
+
+## 16.3 Required machine-readable composition
+Every slide must include a composition object:
+- caption: x, y, w, anchor and treatment (paper, direct or label).
+- sticker: x, y, scale and rotation.
+- secondary_photo: x, y, w and rotation.
+- notes: one short rationale explaining why the placement is safe and balanced.
+
+All x/y/w values are normalized 0..1 relative to the 1080 × 1350 canvas. Keep components inside a 5% safe margin. Use paper treatment when the photograph is busy or contrast is uncertain. Direct text over photography is allowed only over genuinely quiet, high-contrast negative space.
+
+## 16.4 Human-subject protection
+- Never cover a face, body or important gesture with a sticker, caption panel, tape or inset.
+- If a portrait or group is the primary subject, keep the person visually dominant.
+- Do not put a Polaroid over a face or body.
+- When no safe negative space exists, create a separate paper caption zone or omit decoration.
+- Do not crop heads, hands, feet or context-bearing objects merely to satisfy a template.
+
+## 16.5 Responsive layout validation
+Before finalising each slide, verify:
+1. All elements fit inside the canvas and safe margins.
+2. Text fits its panel without overflow or awkward truncation.
+3. Caption and sticker do not overlap protected regions.
+4. Secondary images do not obscure the primary subject.
+5. Visual hierarchy is clear at phone size.
+6. The slide has one dominant focal point.
+7. Decoration is removed if it competes with the photograph.
+
+If any check fails, redesign the slide. A quiet, uncluttered slide is always preferable to an obstructed photograph.
+
+**Non-negotiable:** analyse the image, identify protected and safe regions, then place components. Never place first and hope the composition works.
