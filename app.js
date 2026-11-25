@@ -171,28 +171,40 @@ ${JSON.stringify(analyses)}
     lines.forEach((line,i)=>ctx.fillText(line,x,y+i*lineHeight));
     ctx.restore();
   }
-  function drawCaptionCard(ctx,text,config={}){
+  function drawCaptionCard(ctx,text,config){
     if(!text)return;
-    const {x=64,y=H-250,width=720,fontSize=46,minFontSize=30,maxLines=3,color="#44372b",background="#f4dfc4",align="left",lineHeight=null}=config;
+    config=config||{};
+    const x=config.x==null?64:config.x;
+    const y=config.y==null?H-250:config.y;
+    const width=config.width==null?720:config.width;
+    const fontSize=config.fontSize==null?46:config.fontSize;
+    const minFontSize=config.minFontSize==null?30:config.minFontSize;
+    const maxLines=config.maxLines==null?3:config.maxLines;
+    const background=config.background||"#f4dfc4";
+    const color=config.color||"#44372b";
     const padX=34,padY=27,innerWidth=width-padX*2;
     const family="'Playfair Display', Georgia";
     let size=fontSize,lines=[];
-    const wrap=()=>{
+    function wrap(){
       ctx.font="italic "+size+"px "+family;
       const out=[];let line="";
-      for(const word of String(text).trim().split(/\s+/)){
+      const words=String(text).trim().split(/\s+/);
+      for(const word of words){
         const candidate=line?line+" "+word:word;
         if(ctx.measureText(candidate).width<=innerWidth){line=candidate;continue;}
         if(line)out.push(line);
         if(ctx.measureText(word).width>innerWidth){
           let part="";
-          for(const ch of word){if(ctx.measureText(part+ch).width>innerWidth&&part){out.push(part);part=ch;}else part+=ch;}
+          for(const ch of word){
+            if(ctx.measureText(part+ch).width>innerWidth&&part){out.push(part);part=ch;}
+            else part+=ch;
+          }
           line=part;
         }else line=word;
       }
       if(line)out.push(line);
       return out;
-    };
+    }
     lines=wrap();
     while(lines.length>maxLines&&size>minFontSize){size-=2;lines=wrap();}
     if(lines.length>maxLines){
@@ -201,12 +213,12 @@ ${JSON.stringify(analyses)}
       while(last.length&&ctx.measureText(last+"…").width>innerWidth)last=last.slice(0,-1);
       lines[maxLines-1]=last.trimEnd()+"…";
     }
-    const lh=lineHeight||Math.round(size*1.24);
+    const lh=config.lineHeight||Math.round(size*1.24);
     const height=lines.length*lh+padY*2;
     const safeY=Math.max(36,Math.min(y,H-height-36));
     drawTornPanel(ctx,x,safeY,width,height,background);
-    ctx.save();ctx.fillStyle=color;ctx.font="italic "+size+"px "+family;ctx.textAlign=align;ctx.textBaseline="middle";
-    const tx=align==="center"?x+width/2:x+padX;
+    ctx.save();ctx.fillStyle=color;ctx.font="italic "+size+"px "+family;ctx.textAlign=config.align||"left";ctx.textBaseline="middle";
+    const tx=config.align==="center"?x+width/2:x+padX;
     lines.forEach((line,i)=>ctx.fillText(line,tx,safeY+padY+lh*(i+.5),innerWidth));
     ctx.restore();
   }
