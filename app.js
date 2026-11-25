@@ -190,7 +190,9 @@ ${JSON.stringify(analyses)}
     const imgs=await Promise.all(selected.map(f=>loadImage(f.url)));
     const first=imgs[0];
     const layout=slide.layout;
-    if(index===0){\n      renderCoverSlide(ctx,slide,first);\n    }else if(layout==="hero"){
+    if(index===0){
+      renderCoverSlide(ctx,slide,first);
+    }else if(layout==="hero"){
       drawCover(ctx,first,0,0,W,H,slide.image_focus);
       const grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,"#00000030");grad.addColorStop(.55,"#00000000");grad.addColorStop(1,"#00000060");ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
       if(slide.location_label)drawText(ctx,slide.location_label.toUpperCase(),72,100,850,"22px 'DM Mono', monospace","#fff");
