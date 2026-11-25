@@ -243,6 +243,26 @@ ${JSON.stringify(analyses)}
     lines.forEach((line,i)=>ctx.fillText(line,tx,safeY+padY+lh*(i+.5),innerWidth));
     ctx.restore();
   }
+  function drawPlannedCaption(ctx,slide,text,defaults={}){
+    if(!text)return;
+    const p=slide.composition?.caption||{};
+    const x=Math.round((p.x==null?defaults.x/W:p.x)*W);
+    const y=Math.round((p.y==null?defaults.y/H:p.y)*H);
+    const width=Math.round((p.w==null?defaults.width/W:p.w)*W);
+    const treatment=p.treatment||"paper";
+    if(treatment==="direct"){
+      drawText(ctx,text,x,y,width,"italic 46px 'Playfair Display', Georgia","#fff","left",{maxLines:3,lineHeight:54,minFontSize:30});
+    }else{
+      drawCaptionCard(ctx,text,{x,y,width,fontSize:defaults.fontSize||46,minFontSize:defaults.minFontSize||30,maxLines:defaults.maxLines||3,background:defaults.background||"#f4dfc4"});
+    }
+  }
+  function drawPlannedSticker(ctx,slide){
+    if(!slide.sticker||slide.sticker==="none")return;
+    const p=slide.composition?.sticker||{};
+    const x=(p.x==null?.88:p.x)*W;
+    const y=(p.y==null?.14:p.y)*H;
+    drawSticker(ctx,slide.sticker,x,y);
+  }
   function hasProminentPerson(item){
     const a=item?.analysis||{};
     const role=String(a.visual_role||"").toLowerCase();
@@ -262,7 +282,7 @@ ${JSON.stringify(analyses)}
       drawText(ctx,slide.location_label.toUpperCase(),76,92,760,"22px 'DM Mono', monospace","#fff");
     }
     const title=slide.caption||slide.title||"A journey to remember";
-    drawCaptionCard(ctx,title,{x:54,y:H-300,width:972,fontSize:66,minFontSize:42,maxLines:2,background:"#f2dfc2",lineHeight:78});
+    drawPlannedCaption(ctx,slide,title,{x:54,y:H-300,width:972,fontSize:66,minFontSize:42,maxLines:2,background:"#f2dfc2"});
     ctx.save();
     ctx.strokeStyle="#b88b62";
     ctx.lineWidth=3;
@@ -286,34 +306,34 @@ ${JSON.stringify(analyses)}
       drawCover(ctx,first,0,0,W,H,slide.image_focus);
       const grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,"#00000030");grad.addColorStop(.55,"#00000000");grad.addColorStop(1,"#00000060");ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
       if(slide.location_label)drawText(ctx,slide.location_label.toUpperCase(),72,100,850,"22px 'DM Mono', monospace","#fff");
-      if(slide.caption)drawCaptionCard(ctx,slide.caption,{x:62,y:H-280,width:Math.min(820,W-124),fontSize:48,minFontSize:32,maxLines:3,background:"#f0d6ad"});
+      if(slide.caption)drawPlannedCaption(ctx,slide,slide.caption,{x:62,y:H-280,width:Math.min(820,W-124),fontSize:48,minFontSize:32,maxLines:3,background:"#f0d6ad"});
     }else if(layout==="split"){
       drawCover(ctx,first,0,0,W*.56,H,slide.image_focus);
       if(imgs[1])drawCover(ctx,imgs[1],W*.58,0,W*.42,H);
       drawTornPanel(ctx,W*.54,0,45,H,"#f5eee3");
-      if(slide.caption)drawCaptionCard(ctx,slide.caption,{x:W*.59,y:H-300,width:W*.36,fontSize:36,minFontSize:25,maxLines:4,background:"#f4e6d2"});
+      if(slide.caption)drawPlannedCaption(ctx,slide,slide.caption,{x:W*.59,y:H-300,width:W*.36,fontSize:36,minFontSize:25,maxLines:4,background:"#f4e6d2"});
     }else if(layout==="polaroid"){
       drawCover(ctx,first,0,0,W,H,slide.image_focus);
       if(imgs[1]&&!hasProminentPerson(selected[0])){
         ctx.save();ctx.translate(W*.79,H*.23);ctx.rotate(.055);ctx.shadowColor="#0005";ctx.shadowBlur=24;ctx.fillStyle="#fffdf7";ctx.fillRect(-145,-170,290,360);ctx.shadowBlur=0;drawCover(ctx,imgs[1],-128,-153,256,285);ctx.restore();
       }
-      if(slide.caption)drawCaptionCard(ctx,slide.caption,{x:42,y:H-245,width:620,fontSize:42,minFontSize:30,maxLines:3,background:"#f4dfc4"});
+      if(slide.caption)drawPlannedCaption(ctx,slide,slide.caption,{x:42,y:H-245,width:620,fontSize:42,minFontSize:30,maxLines:3,background:"#f4dfc4"});
     }else if(layout==="collage"){
       drawCover(ctx,first,0,0,W,H,slide.image_focus);
       if(imgs[1]){ctx.save();ctx.translate(W*.68,H*.32);ctx.rotate(-.09);ctx.shadowColor="#0006";ctx.shadowBlur=25;ctx.fillStyle="#fff";ctx.fillRect(-185,-210,370,430);ctx.shadowBlur=0;drawCover(ctx,imgs[1],-168,-192,336,350);ctx.restore();}
       if(imgs[2]){ctx.save();ctx.translate(W*.25,H*.78);ctx.rotate(.07);ctx.shadowColor="#0006";ctx.shadowBlur=20;ctx.fillStyle="#fff";ctx.fillRect(-150,-165,300,345);ctx.shadowBlur=0;drawCover(ctx,imgs[2],-135,-150,270,280);ctx.restore();}
-      if(slide.caption)drawCaptionCard(ctx,slide.caption,{x:48,y:H-250,width:660,fontSize:44,minFontSize:30,maxLines:3,background:"#f4e6d2"});
+      if(slide.caption)drawPlannedCaption(ctx,slide,slide.caption,{x:48,y:H-250,width:660,fontSize:44,minFontSize:30,maxLines:3,background:"#f4e6d2"});
     }else if(layout==="note"){
       ctx.fillStyle=slide.background;ctx.fillRect(0,0,W,H);drawCover(ctx,first,45,45,W-90,H*.68,slide.image_focus);
       drawTornPanel(ctx,0,H*.70,W,H*.30,"#f4e6d2");
       if(slide.location_label)drawText(ctx,slide.location_label.toUpperCase(),75,H*.76,900,"18px 'DM Mono', monospace","#806b58","left",{maxLines:1,lineHeight:24});
-      drawCaptionCard(ctx,slide.caption||slide.title,{x:42,y:H*.79,width:W-84,fontSize:48,minFontSize:32,maxLines:2,background:"#f4e6d2"});
+      drawPlannedCaption(ctx,slide,slide.caption||slide.title,{x:42,y:H*.79,width:W-84,fontSize:48,minFontSize:32,maxLines:2,background:"#f4e6d2"});
     }else{
       drawCover(ctx,first,0,H*.28,W,H*.72,slide.image_focus);
       drawTornPanel(ctx,0,0,W,H*.38,"#f4e6d2");
-      drawCaptionCard(ctx,slide.caption||slide.title,{x:52,y:62,width:W-104,fontSize:54,minFontSize:36,maxLines:2,background:"#f4e6d2"});
+      drawPlannedCaption(ctx,slide,slide.caption||slide.title,{x:52,y:62,width:W-104,fontSize:54,minFontSize:36,maxLines:2,background:"#f4e6d2"});
     }
-    if(index!==0&&slide.sticker!=="none")drawSticker(ctx,slide.sticker,W-145,layout==="hero"?H*.18:180);
+    if(index!==0)drawPlannedSticker(ctx,slide);
     if(layout!=="hero"&&layout!=="note"&&layout!=="closing"&&slide.location_label)drawText(ctx,slide.location_label.toUpperCase(),65,H-55,850,"16px 'DM Mono', monospace","#51483d","left",{maxLines:1,lineHeight:22});
     if(layout!=="hero")paperNoise(ctx);
     return canvas;
