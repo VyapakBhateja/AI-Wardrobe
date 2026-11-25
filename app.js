@@ -65,7 +65,10 @@
     for(let i=0;i<state.files.length;i++){
       const item=state.files[i];
       progress(5+Math.round((i/state.files.length)*35),"Looking closely…","Analysing "+item.id+" ("+(i+1)+" of "+state.files.length+")",0);
-      const prompt=`Analyse this travel photograph for a carousel art director. Destination context: ${destination||"not specified"}. Vibe: ${vibe}. Return concise JSON with keys: image_id (string), subject (string), setting (string), likely_location (string or "unknown"), location_confidence ("high"|"medium"|"low"), visual_role (one of hero|landscape|portrait|architecture|food|activity|detail|group|nightlife|candid), dominant_colours (array of 3 strings), composition (string), focal_point (string), negative_space (string), crop_advice (string), quality (string), story_value (string). Never claim an exact landmark unless visually clear.`;
+      const prompt=`You are performing visual preflight for a professional scrapbook carousel. Inspect the actual pixels of this photograph, not just its theme. Destination context: ${destination||"not specified"}. Vibe: ${vibe}.
+Return concise JSON with these keys:
+image_id (string), subject (string), setting (string), likely_location (string or "unknown"), location_confidence ("high"|"medium"|"low"), visual_role (hero|landscape|portrait|architecture|food|activity|detail|group|nightlife|candid), dominant_colours (3 strings), composition (string), focal_point (string), focal_point_box ({x,y,w,h} normalized 0..1), protected_regions (array of {x,y,w,h,reason} normalized 0..1 for faces, people, landmark/sign/important objects), negative_space (string), negative_space_regions (array of {x,y,w,h} normalized 0..1 where text/graphics can safely sit), subject_position (left|center|right|top|bottom), orientation (portrait|landscape|square), crop_advice (string), safe_crop ({x,y,w,h} normalized 0..1), quality (string), story_value (string).
+Coordinate rules: estimate boxes from the image as displayed; x/y are top-left, w/h are width/height; keep all values within 0..1. If unsure, return empty arrays and explain uncertainty. Never invent precise landmarks. Prioritise faces and important objects over decorative space.`;
       try{const text=await callAI(prompt,item.file);item.analysis=parseJSON(text);item.analysis.image_id=item.id;results.push(item.analysis);}
       catch(error){console.warn("Photo analysis fallback",item.id,error);item.analysis={image_id:item.id,subject:"Travel photograph",setting:"Uncertain",likely_location:"unknown",location_confidence:"low",visual_role:"candid",dominant_colours:[],composition:"Use visual inspection",focal_point:"Main visible subject",negative_space:"Assess during layout",crop_advice:"Preserve full subject",quality:"Not assessed",story_value:"Potential personal memory"};results.push(item.analysis);}
     }
@@ -75,14 +78,19 @@
     const count=brief.count==="auto"?"Choose between 5 and 10 slides based on the strongest images":brief.count+" slides";
     return `${DESIGN_GUIDE}
 You are creating a carousel plan for an actual browser-based renderer. Return JSON matching:
-{"title":"short title","creative_direction":"one sentence","palette":["#hex",...],"slides":[{"title":"short slide title","purpose":"story purpose","layout":"hero|polaroid|split|collage|note|closing","images":["IMG_001"],"caption":"short optional text","location_label":"optional factual label","background":"#hex","sticker":"none|star|shell|flower|camera|sparkle|ticket|tape","rotation":-5,"image_focus":"center|top|bottom","design_note":"short direction"}]}
+{"title":"short title","creative_direction":"one sentence","palette":["#hex",...],"slides":[{"title":"short slide title","purpose":"story purpose","layout":"hero|polaroid|split|collage|note|closing","images":["IMG_001"],"caption":"short optional text","location_label":"optional factual label","background":"#hex","sticker":"none|star|shell|flower|camera|sparkle|ticket|tape","rotation":-5,"image_focus":"center|top|bottom","composition":{"caption":{"x":0.08,"y":0.72,"w":0.78,"anchor":"bottom|top|left|right|center","treatment":"paper|direct|label"},"sticker":{"x":0.88,"y":0.14,"scale":0.8,"rotation":-8},"secondary_photo":{"x":0.66,"y":0.25,"w":0.28,"rotation":5},"notes":"short placement rationale"}}]}
 Rules:
 - Create ${count}. Use only supplied image IDs and use each selected photo no more than twice.
 - The first slide is a dedicated cover: choose the strongest single photograph, use a memorable short title/caption (ideally 2–6 words), and a factual destination label when known. The final slide should feel like a closing memory.
 - Use varied layouts and a narrative flow; avoid repeating layout more than twice consecutively.
 - Only use a location label if supported by image analysis or the user destination. Do not make up specific venues.
 - Captions must be short. Respect text preference.
-- For the scrapbook style, use torn-paper/Polaroid/sticker motifs selectively. Renderer has six supported layouts only.
+- For the scrapbook style, use torn-paper/Polaroid/sticker motifs selectively. Renderer has six supported base layouts; composition coordinates make each instance unique.
+- REQUIRED image-aware composition: inspect the analysis for every selected image. Place captions, stickers and inset photographs only in actual negative-space regions. Never cover protected_regions, faces, people, focal_point_box, signs, food details or important objects. If no safe region exists, move text onto a separate paper panel or omit the decoration.
+- REQUIRED composition coordinates: provide normalized x/y/w values (0..1) for caption, sticker and secondary_photo in every slide. Coordinates describe the element's top-left and width relative to the 1080x1350 canvas. Use the image's actual negative space; do not repeat the same coordinates across slides. Use a caption treatment of paper for busy imagery, direct only over genuinely quiet/high-contrast areas, or label for small metadata. Keep every element inside 5% safe margins.
+- Caption panels must be sized to the text; keep captions short, phone-readable and no more than 2 lines where possible. Never allow a text panel to collide with a face or focal object.
+- If a portrait/group photo is the primary image, do not place a Polaroid or sticker over the person. Supporting photos may be placed in a clear corner or omitted.
+- If placement confidence is low or negative space is insufficient, choose a quiet full-bleed slide with a small external note panel. Simplicity is preferable to obstruction.
 - For "No text", caption and location_label must be empty.
 - Do not include markdown or explanatory prose outside JSON.
 CREATIVE BRIEF:
@@ -96,6 +104,14 @@ Extra notes: ${brief.notes||"None"}
 Image analysis:
 ${JSON.stringify(analyses)}
 `;
+  }
+  function normalisePlacement(value,fallback){
+    const p=value&&typeof value==="object"?value:{};
+    const clamp=(v,min,max)=>Math.max(min,Math.min(max,Number.isFinite(Number(v))?Number(v):min));
+    const w=clamp(p.w==null?fallback.w:p.w,.06,.9);
+    const x=clamp(p.x==null?fallback.x:p.x,.05,.95-w);
+    const y=clamp(p.y==null?fallback.y:p.y,.05,.95);
+    return {x,y,w,anchor:["top","bottom","left","right","center"].includes(p.anchor)?p.anchor:fallback.anchor,treatment:["paper","direct","label","sticker","photo"].includes(p.treatment)?p.treatment:fallback.treatment,scale:clamp(p.scale==null?1:p.scale,.4,1.4),rotation:clamp(p.rotation==null?0:p.rotation,-15,15)};
   }
   async function createStoryboard(brief,analyses){
     progress(44,"Finding the story…","The art director is sequencing your memories.",1);
@@ -113,7 +129,12 @@ ${JSON.stringify(analyses)}
       sticker:["none","star","shell","flower","camera","sparkle","ticket","tape"].includes(s.sticker)?s.sticker:"none",
       rotation:Math.max(-12,Math.min(12,Number(s.rotation)||0)),
       image_focus:["center","top","bottom"].includes(s.image_focus)?s.image_focus:"center",
-      design_note:String(s.design_note||"")
+      design_note:String(s.design_note||""),
+      composition:{
+        caption:normalisePlacement(s.composition?.caption,{x:.08,y:.72,w:.78,anchor:"bottom",treatment:"paper"}),
+        sticker:normalisePlacement(s.composition?.sticker,{x:.88,y:.14,w:.08,anchor:"top",treatment:"sticker"}),
+        secondary_photo:normalisePlacement(s.composition?.secondary_photo,{x:.66,y:.25,w:.28,anchor:"top",treatment:"photo"})
+      }
     })).filter(s=>s.images.length);
     if(!plan.slides.length)throw new Error("The AI did not select any of your uploaded photographs. Try again.");
     return plan;
